@@ -1,0 +1,218 @@
+openapi: 3.0.0
+info:
+  title: API de Salones de Cumpleaños
+  version: 1.0.0
+  description: API para gestionar reservas y administración de salones de cumpleaños.
+servers:
+  - url: http://localhost:3000
+    description: Servidor local
+
+paths:
+  /api/v1/salones:
+    get:
+      tags:
+      - Salones
+      summary: Obtener todos los salones
+      responses:
+        '200':
+          description: Lista de salones
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    example: true
+                  salones:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Salon'
+    post:
+      tags:
+      - Salones
+      summary: Crear un nuevo salón
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SalonInput'
+      responses:
+        '201':
+          description: Salón creado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    example: true
+                  datos:
+                    $ref: '#/components/schemas/Salon'
+
+  /api/v1/salones/{id}:
+    get:
+      tags:
+      - Salones
+      summary: Obtener un salón por ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Detalle del salón
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    example: true
+                  datos:
+                    $ref: '#/components/schemas/Salon'
+        '404':
+          description: Salón no encontrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    example: false
+                  mensaje:
+                    type: string
+                    example: Salón no encontrado
+    put:
+      tags:
+      - Salones
+      summary: Actualizar un salón
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SalonUpdate'
+      responses:
+        '200':
+          description: Salón actualizado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    example: true
+                  datos:
+                    $ref: '#/components/schemas/Salon'
+        '404':
+          description: Salón no encontrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    example: false
+                  mensaje:
+                    type: string
+                    example: Salón no encontrado
+    delete:
+      tags:
+      - Salones
+      summary: Eliminar un salón
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Salón eliminado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    example: true
+                  mensaje:
+                    type: string
+                    example: Salón eliminado correctamente
+        '404':
+          description: Salón no encontrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    example: false
+                  mensaje:
+                    type: string
+                    example: Salón no encontrado
+
+components:
+  schemas:
+    Salon:
+      type: object
+      properties:
+        salon_id:
+          type: integer
+        titulo:
+          type: string
+        direccion:
+          type: string
+        capacidad:
+          type: integer
+        importe:
+          type: number
+          format: float
+        activo:
+          type: boolean
+    SalonInput:
+      type: object
+      required:
+        - titulo
+        - direccion
+        - capacidad
+        - importe
+      properties:
+        titulo:
+          type: string
+        direccion:
+          type: string
+        capacidad:
+          type: integer
+        importe:
+          type: number
+          format: float
+    SalonUpdate:
+      type: object
+      properties:
+        titulo:
+          type: string
+        direccion:
+          type: string
+        capacidad:
+          type: integer
+        importe:
+          type: number
+          format: float
