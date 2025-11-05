@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Estadísticas de Salones</title>
+
+  <!-- Chart -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1"></script>
+
+  <!-- Estilos del dashboard -->
+  <link rel="stylesheet" href="/public/css/dashboard.css">
+</head>
+<body>
+
+<header>
+  <div class="bar">
+    <div class="title">Estadísticas de Salones</div>
+    <div class="actions">
+      <span id="adminBadge" class="pill" title="Estado de sesión">Invitado</span>
+      <button id="darkToggle" class="btn-ghost pill" aria-label="Cambiar tema">🌙 Modo oscuro</button>
+    </div>
+  </div>
+</header>
+
+<main class="container">
+  <section class="kpis">
+    <div class="card t-blue"><div class="k-title">Total de Salones</div><div id="kpiTotal" class="k-value">0</div></div>
+    <div class="card t-green"><div class="k-title">Capacidad Total</div><div id="kpiCapacidad" class="k-value">0</div></div>
+    <div class="card t-amber"><div class="k-title">Ingreso Promedio</div><div id="kpiPromedio" class="k-value">$0</div></div>
+    <div class="card t-red"><div class="k-title">Capacidad Promedio</div><div id="kpiCapProm" class="k-value">0</div></div>
+  </section>
+
+  <section class="grid-2">
+    <div class="card chart-card">
+      <h3>Distribución de Capacidades</h3>
+      <div class="chart-wrap"><canvas id="capacidadChart"></canvas></div>
+    </div>
+    <div class="card chart-card">
+      <h3>Distribución de Precios</h3>
+      <div class="chart-wrap"><canvas id="precioChart"></canvas></div>
+    </div>
+  </section>
+
+  <h2 class="block-title">Lista de Salones</h2>
+  <div class="card">
+    <div class="table-wrap">
+      <table id="salonesTable">
+        <thead>
+          <tr><th>ID</th><th>Título</th><th>Dirección</th><th>Capacidad</th><th>Importe</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <section class="card admin" id="adminSection" style="display:none">
+    <h2>Administración</h2>
+    <div class="btn-row">
+      <button class="btn" id="logoutBtn">Cerrar Sesión</button>
+      <button class="btn" id="installBtn">Instalar/Actualizar SPs en la BD</button>
+      <button class="btn" id="reporteBtn">Generar Informe de Reservas</button>
+    </div>
+
+    <div class="filters" id="reporteFiltros" style="display:none">
+      <label>Fecha inicio:<input type="date" id="f_inicio"></label>
+      <label>Fecha fin:<input type="date" id="f_fin"></label>
+      <label>Salon ID:<input type="number" id="f_salon" class="small" min="1"></label>
+      <label>Usuario ID:<input type="number" id="f_usuario" class="small" min="1"></label>
+      <button class="btn" id="runReporteBtn">Ejecutar</button>
+    </div>
+
+    <div class="result-panel" id="reportePanel" style="display:none">
+      <h4 style="margin-bottom:8px">Resultados del Informe</h4>
+      <div id="reporteContenido">No hay datos</div>
+    </div>
+  </section>
+</main>
+
+<!-- Modal de Login -->
+<div id="loginOverlay" class="overlay">
+  <div class="modal">
+    <h3>Iniciar Sesión</h3>
+    <form id="loginForm" class="login-grid" autocomplete="on">
+      <input id="loginUsuario" class="input" type="text" placeholder="Usuario" required autocomplete="username"/>
+      <input id="loginPassword" class="input" type="password" placeholder="Contraseña" required autocomplete="current-password"/>
+      <button id="loginBtn" class="btn" type="submit">Ingresar</button>
+      <div id="loginError" class="error"></div>
+    </form>
+  </div>
+</div>
+
+<!-- Lógica del dashboard -->
+<script src="/public/js/dashboard.js"></script>
+</body>
+</html>
