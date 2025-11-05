@@ -26,7 +26,7 @@ app.use('/docs', swaggerUI.serve, swaggerUI.setup(specs));
 
 // Ruta para el dashboard
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/dashboard.html'));
+    res.sendFile(path.join(__dirname, '../public/utiles/dashboard.html'));
 });
 
 app.use('/api/v1/salones', v1SalonesRutas);
