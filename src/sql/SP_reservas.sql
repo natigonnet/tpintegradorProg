@@ -89,7 +89,7 @@ BEGIN
         
         -- Datos del usuario
         u.usuario_id,
-        CONCAT(u.nombre, ' ', u.apellido) AS usuario_nombre_completo,
+        u.nombre AS usuario_nombre_completo,
         u.nombre_usuario,
         u.celular,
         
@@ -151,8 +151,7 @@ BEGIN
         -- Datos del usuario
         u.usuario_id,
         u.nombre,
-        u.apellido,
-        CONCAT(u.nombre, ' ', u.apellido) AS usuario_nombre_completo,
+        u.nombre AS usuario_nombre_completo,
         u.nombre_usuario,
         u.celular,
         u.tipo_usuario,

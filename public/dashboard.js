@@ -1,238 +1,436 @@
+/**
+ * Módulo principal del Dashboard
+ * Gestiona la interfaz de usuario y las interacciones con el backend
+ */
 (() => {
-    let salones = [];
-    const charts = { cap: null, price: null };
-    const qs = (s) => document.querySelector(s);
+  // Variables globales del módulo
+  let listaSalones = [];
+  const graficos = { capacidad: null, precio: null };
   
-    const els = {
-      adminBadge: qs('#adminBadge'),
-      adminSection: qs('#adminSection'),
-      darkToggle: qs('#darkToggle'),
-      kpiTotal: qs('#kpiTotal'),
-      kpiCapacidad: qs('#kpiCapacidad'),
-      kpiPromedio: qs('#kpiPromedio'),
-      kpiCapProm: qs('#kpiCapProm'),
-      tBody: qs('#salonesTable tbody'),
-      loginOverlay: qs('#loginOverlay'),
-      loginForm: qs('#loginForm'),
-      loginUsuario: qs('#loginUsuario'),
-      loginPassword: qs('#loginPassword'),
-      loginBtn: qs('#loginBtn'),
-      loginError: qs('#loginError'),
-      logoutBtn: qs('#logoutBtn'),
-      installBtn: qs('#installBtn'),
-      reporteBtn: qs('#reporteBtn'),
-      reporteFiltros: qs('#reporteFiltros'),
-      runReporteBtn: qs('#runReporteBtn'),
-      reportePanel: qs('#reportePanel'),
-      reporteContenido: qs('#reporteContenido'),
-    };
+  // Función auxiliar para seleccionar elementos del DOM
+  const seleccionarElemento = (selector) => document.querySelector(selector);
   
-    const isDark = () => document.body.classList.contains('dark');
-    const money = (n) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 2 }).format(Number(n || 0));
-    const setAdminUI = (logueado) => {
-      els.adminBadge.textContent = logueado ? 'Admin conectado' : 'Invitado';
-      els.adminBadge.style.borderColor = logueado ? 'var(--green)' : 'var(--edge)';
-      els.adminSection.style.display = logueado ? 'block' : 'none';
-    };
-    const showLogin = () => els.loginOverlay.classList.add('show');
-    const hideLogin = () => els.loginOverlay.classList.remove('show');
+  // Referencias a elementos del DOM
+  const elementosDOM = {
+    badgeAdmin: seleccionarElemento('#adminBadge'),
+    seccionAdmin: seleccionarElemento('#adminSection'),
+    toggleTema: seleccionarElemento('#darkToggle'),
+    kpiTotal: seleccionarElemento('#kpiTotal'),
+    kpiCapacidad: seleccionarElemento('#kpiCapacidad'),
+    kpiPromedio: seleccionarElemento('#kpiPromedio'),
+    kpiCapProm: seleccionarElemento('#kpiCapProm'),
+    cuerpoTabla: seleccionarElemento('#salonesTable tbody'),
+    overlayLogin: seleccionarElemento('#loginOverlay'),
+    formularioLogin: seleccionarElemento('#loginForm'),
+    inputUsuario: seleccionarElemento('#loginUsuario'),
+    inputPassword: seleccionarElemento('#loginPassword'),
+    botonLogin: seleccionarElemento('#loginBtn'),
+    mensajeError: seleccionarElemento('#loginError'),
+    botonCerrarSesion: seleccionarElemento('#logoutBtn'),
+    botonInstalarSPs: seleccionarElemento('#installBtn'),
+    botonReporte: seleccionarElemento('#reporteBtn'),
+    filtrosReporte: seleccionarElemento('#reporteFiltros'),
+    botonEjecutarReporte: seleccionarElemento('#runReporteBtn'),
+    panelReporte: seleccionarElemento('#reportePanel'),
+    contenidoReporte: seleccionarElemento('#reporteContenido'),
+  };
   
-    async function cargarDatos() {
-      if (charts.cap) { charts.cap.destroy(); charts.cap = null; }
-      if (charts.price) { charts.price.destroy(); charts.price = null; }
+  /**
+   * Verifica si el tema oscuro está activo
+   */
+  const esTemaOscuro = () => document.body.classList.contains('dark');
   
-      try {
-        const resp = await fetch('/servicios/dashboard/salones');
-        if (!resp.ok) throw new Error('HTTP ' + resp.status);
-        const data = await resp.json();
-        salones = data.datos || [];
+  /**
+   * Formatea un número como moneda en pesos argentinos
+   */
+  const formatearMoneda = (numero) => {
+    return new Intl.NumberFormat('es-AR', {
+      style: 'currency',
+      currency: 'ARS',
+      maximumFractionDigits: 2
+    }).format(Number(numero || 0));
+  };
   
-        els.kpiTotal.textContent = salones.length;
-        const totalCap = salones.reduce((s, x) => s + (parseInt(x.capacidad) || 0), 0);
-        const totalImp = salones.reduce((s, x) => s + (parseFloat(x.importe) || 0), 0);
-        const promImp = salones.length ? totalImp / salones.length : 0;
-        const promCap = salones.length ? totalCap / salones.length : 0;
+  /**
+   * Actualiza la interfaz de usuario según el estado de autenticación
+   */
+  const actualizarInterfazAdmin = (estaLogueado) => {
+    elementosDOM.badgeAdmin.textContent = estaLogueado ? 'Admin conectado' : 'Invitado';
+    elementosDOM.badgeAdmin.style.borderColor = estaLogueado ? 'var(--green)' : 'var(--edge)';
+    elementosDOM.seccionAdmin.style.display = estaLogueado ? 'block' : 'none';
+  };
   
-        els.kpiCapacidad.textContent = totalCap;
-        els.kpiPromedio.textContent = money(promImp);
-        els.kpiCapProm.textContent = Math.round(promCap);
+  /**
+   * Muestra el modal de login
+   */
+  const mostrarLogin = () => elementosDOM.overlayLogin.classList.add('show');
   
-        els.tBody.innerHTML = '';
-        for (const s of salones) {
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td>${s.salon_id}</td>
-            <td>${s.titulo}</td>
-            <td>${s.direccion}</td>
-            <td>${s.capacidad}</td>
-            <td>${money(s.importe)}</td>`;
-          els.tBody.appendChild(tr);
-        }
+  /**
+   * Oculta el modal de login
+   */
+  const ocultarLogin = () => elementosDOM.overlayLogin.classList.remove('show');
   
-        crearGraficos();
-      } catch (err) {
-        console.error('Error al cargar datos:', err);
-        alert('Error al cargar datos. Verifica la conexión.');
+  /**
+   * Carga los datos de salones desde el backend
+   */
+  async function cargarDatosSalones() {
+    // Destruir gráficos existentes antes de crear nuevos
+    if (graficos.capacidad) {
+      graficos.capacidad.destroy();
+      graficos.capacidad = null;
+    }
+    if (graficos.precio) {
+      graficos.precio.destroy();
+      graficos.precio = null;
+    }
+    
+    try {
+      const respuesta = await fetch('/servicios/dashboard/salones');
+      if (!respuesta.ok) {
+        throw new Error('HTTP ' + respuesta.status);
       }
-    }
-  
-    function crearGraficos() {
-      const labels = salones.map((s) => s.titulo);
-      const capacidades = salones.map((s) => Number(s.capacidad || 0));
-      const precios = salones.map((s) => Number(s.importe || 0));
-  
-      const gridColor = isDark() ? 'rgba(255,255,255,.12)' : 'rgba(0,0,0,.12)';
-      const tickColor = isDark() ? '#cfd8e3' : '#425466';
-      const barBg = isDark() ? 'rgba(113,166,255,.35)' : 'rgba(173,216,230,.7)';
-      const barBorder = isDark() ? 'rgba(113,166,255,.8)' : 'rgba(135,206,250,.8)';
-      const lineBorder = isDark() ? 'rgba(111,207,151,1)' : 'rgba(46,204,113,1)';
-      const lineFill = isDark() ? 'rgba(111,207,151,.15)' : 'rgba(46,204,113,.2)';
-  
-      const ctx1 = document.getElementById('capacidadChart').getContext('2d');
-      charts.cap = new Chart(ctx1, {
-        type: 'bar',
-        data: { labels, datasets: [{ label: 'Capacidad', data: capacidades, backgroundColor: barBg, borderColor: barBorder, borderWidth: 1 }] },
-        options: {
-          maintainAspectRatio: false,
-          scales: {
-            y: { beginAtZero: true, grid: { color: gridColor }, ticks: { color: tickColor } },
-            x: { grid: { display: false }, ticks: { color: tickColor } },
-          },
-          plugins: { legend: { labels: { color: tickColor } } },
-        },
-      });
-  
-      const ctx2 = document.getElementById('precioChart').getContext('2d');
-      charts.price = new Chart(ctx2, {
-        type: 'line',
-        data: {
-          labels,
-          datasets: [{
-            label: 'Precio ($)', data: precios, borderColor: lineBorder, backgroundColor: lineFill,
-            borderWidth: 2, tension: .35, fill: true, pointRadius: 4, pointHoverRadius: 6
-          }],
-        },
-        options: {
-          maintainAspectRatio: false,
-          scales: {
-            y: { beginAtZero: true, grid: { color: gridColor }, ticks: { color: tickColor } },
-            x: { grid: { display: false }, ticks: { color: tickColor } },
-          },
-          plugins: { legend: { labels: { color: tickColor } } },
-        },
-      });
-    }
-  
-    async function hacerLogin(e) {
-      e.preventDefault();
-      els.loginError.textContent = '';
-      els.loginBtn.disabled = true; els.loginBtn.textContent = 'Ingresando...';
-      try {
-        const usuario = els.loginUsuario.value.trim();
-        const password = els.loginPassword.value;
-        const r = await fetch('/servicios/dashboard/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ usuario, password })
-        });
-        if (!r.ok) {
-          const err = await r.json().catch(() => ({ mensaje: 'Credenciales inválidas' }));
-          throw new Error(err.mensaje || 'Error al iniciar sesión');
-        }
-        const body = await r.json();
-        localStorage.setItem('admin_token', body.token || '1');
-        setAdminUI(true);
-        hideLogin();
-        await cargarDatos();
-      } catch (e) {
-        els.loginError.textContent = e.message || 'Error al iniciar sesión';
-      } finally {
-        els.loginBtn.disabled = false; els.loginBtn.textContent = 'Ingresar';
+      const datos = await respuesta.json();
+      listaSalones = datos.datos || [];
+      
+      // Actualizar KPIs
+      elementosDOM.kpiTotal.textContent = listaSalones.length;
+      const capacidadTotal = listaSalones.reduce((suma, salon) => 
+        suma + (parseInt(salon.capacidad) || 0), 0);
+      const importeTotal = listaSalones.reduce((suma, salon) => 
+        suma + (parseFloat(salon.importe) || 0), 0);
+      const promedioImporte = listaSalones.length ? importeTotal / listaSalones.length : 0;
+      const promedioCapacidad = listaSalones.length ? capacidadTotal / listaSalones.length : 0;
+      
+      elementosDOM.kpiCapacidad.textContent = capacidadTotal;
+      elementosDOM.kpiPromedio.textContent = formatearMoneda(promedioImporte);
+      elementosDOM.kpiCapProm.textContent = Math.round(promedioCapacidad);
+      
+      // Actualizar tabla
+      elementosDOM.cuerpoTabla.innerHTML = '';
+      for (const salon of listaSalones) {
+        const fila = document.createElement('tr');
+        fila.innerHTML = `
+          <td>${salon.salon_id}</td>
+          <td>${salon.titulo}</td>
+          <td>${salon.direccion}</td>
+          <td>${salon.capacidad}</td>
+          <td>${formatearMoneda(salon.importe)}</td>`;
+        elementosDOM.cuerpoTabla.appendChild(fila);
       }
-    }
-  
-    function cerrarSesion() {
-      localStorage.removeItem('admin_token');
-      setAdminUI(false);
-      showLogin();
-    }
-  
-    els.installBtn.addEventListener('click', async () => {
-      const token = localStorage.getItem('admin_token'); if (!token) return showLogin();
-      if (!confirm('¿Instalar/Actualizar los procedimientos almacenados en la base de datos?')) return;
-      try {
-        els.installBtn.disabled = true; els.installBtn.textContent = 'Instalando...';
-        const r = await fetch('/servicios/dashboard/instalar-sps', { method: 'POST', headers: { Authorization: 'Bearer ' + token } });
-        const data = await r.json(); if (!r.ok) throw new Error(data.mensaje || 'Error desconocido');
-        alert(data.mensaje || 'SPs instalados/actualizados correctamente');
-      } catch (e) { alert(e.message || e); }
-      finally { els.installBtn.disabled = false; els.installBtn.textContent = 'Instalar/Actualizar SPs en la BD'; }
-    });
-  
-    els.reporteBtn.addEventListener('click', () => {
-      const token = localStorage.getItem('admin_token'); if (!token) return showLogin();
-      els.reporteFiltros.style.display = 'flex';
-      els.reportePanel.style.display = 'block';
-    });
-  
-    els.runReporteBtn.addEventListener('click', async () => {
-      const token = localStorage.getItem('admin_token'); if (!token) return showLogin();
-      const params = new URLSearchParams();
-      const i = qs('#f_inicio').value; const f = qs('#f_fin').value;
-      const s = qs('#f_salon').value;  const u = qs('#f_usuario').value;
-      if (i) params.append('fecha_inicio', i);
-      if (f) params.append('fecha_fin', f);
-      if (s) params.append('salon_id', s);
-      if (u) params.append('usuario_id', u);
-  
-      try {
-        els.runReporteBtn.disabled = true; els.runReporteBtn.textContent = 'Generando...';
-        const r = await fetch('/servicios/dashboard/reporte-reservas?' + params.toString(), { headers: { Authorization: 'Bearer ' + token } });
-        const data = await r.json(); if (!r.ok) throw new Error(data.mensaje || 'Error generando informe');
-        const filas = data.datos || [];
-        if (!filas.length) { els.reporteContenido.textContent = 'No se encontraron registros.'; return; }
-  
-        const claves = Object.keys(filas[0]);
-        let html = '<div class="table-wrap"><table class="report-table"><thead><tr>';
-        for (const k of claves) html += `<th>${k}</th>`;
-        html += '</tr></thead><tbody>';
-        for (const fila of filas) {
-          html += '<tr>';
-          for (const k of claves) {
-            let v = fila[k]; const kl = k.toLowerCase();
-            if (v == null) v = '';
-            else if (kl.includes('importe') || kl.includes('total') || kl.includes('precio')) v = money(v);
-            else if (kl.includes('fecha')) { try { v = new Date(v).toISOString().slice(0, 10); } catch { } }
-            html += `<td>${v}</td>`;
-          }
-          html += '</tr>';
-        }
-        html += '</tbody></table></div>';
-        els.reporteContenido.innerHTML = html;
-      } catch (e) {
-        alert(e.message || e);
-      } finally {
-        els.runReporteBtn.disabled = false; els.runReporteBtn.textContent = 'Ejecutar';
-      }
-    });
-  
-    els.darkToggle.addEventListener('click', () => {
-      document.body.classList.toggle('dark');
+      
       crearGraficos();
-      els.darkToggle.textContent = document.body.classList.contains('dark') ? '☀️ Modo claro' : '🌙 Modo oscuro';
-    });
+    } catch (error) {
+      console.error('Error al cargar datos:', error);
+      alert('Error al cargar datos. Verifica la conexión.');
+    }
+  }
   
-    els.loginForm.addEventListener('submit', hacerLogin);
-    els.logoutBtn.addEventListener('click', cerrarSesion);
-  
-    window.addEventListener('DOMContentLoaded', async () => {
-      if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-        document.body.classList.add('dark');
-        els.darkToggle.textContent = '☀️ Modo claro';
+  /**
+   * Crea los gráficos de capacidad y precios
+   */
+  function crearGraficos() {
+    // Destruir gráficos existentes antes de crear nuevos
+    if (graficos.capacidad) {
+      graficos.capacidad.destroy();
+      graficos.capacidad = null;
+    }
+    if (graficos.precio) {
+      graficos.precio.destroy();
+      graficos.precio = null;
+    }
+    
+    const etiquetas = listaSalones.map((salon) => salon.titulo);
+    const capacidades = listaSalones.map((salon) => Number(salon.capacidad || 0));
+    const precios = listaSalones.map((salon) => Number(salon.importe || 0));
+    
+    const colorGrid = esTemaOscuro() ? 'rgba(255,255,255,.12)' : 'rgba(0,0,0,.12)';
+    const colorTick = esTemaOscuro() ? '#cfd8e3' : '#425466';
+    const colorFondoBarras = esTemaOscuro() ? 'rgba(113,166,255,.35)' : 'rgba(173,216,230,.7)';
+    const colorBordeBarras = esTemaOscuro() ? 'rgba(113,166,255,.8)' : 'rgba(135,206,250,.8)';
+    const colorBordeLinea = esTemaOscuro() ? 'rgba(111,207,151,1)' : 'rgba(46,204,113,1)';
+    const colorRellenoLinea = esTemaOscuro() ? 'rgba(111,207,151,.15)' : 'rgba(46,204,113,.2)';
+    
+    // Gráfico de barras - Capacidad
+    const canvasCapacidad = document.getElementById('capacidadChart');
+    const contextoCapacidad = canvasCapacidad.getContext('2d');
+    graficos.capacidad = new Chart(contextoCapacidad, {
+      type: 'bar',
+      data: {
+        labels: etiquetas,
+        datasets: [{
+          label: 'Capacidad',
+          data: capacidades,
+          backgroundColor: colorFondoBarras,
+          borderColor: colorBordeBarras,
+          borderWidth: 1
+        }]
+      },
+      options: {
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: true,
+            grid: { color: colorGrid },
+            ticks: { color: colorTick }
+          },
+          x: {
+            grid: { display: false },
+            ticks: { color: colorTick }
+          }
+        },
+        plugins: {
+          legend: { labels: { color: colorTick } }
+        }
       }
-      const token = localStorage.getItem('admin_token');
-      if (token) { setAdminUI(true); await cargarDatos(); }
-      else { setAdminUI(false); showLogin(); }
     });
-  })();
+    
+    // Gráfico de línea - Precios
+    const canvasPrecio = document.getElementById('precioChart');
+    const contextoPrecio = canvasPrecio.getContext('2d');
+    graficos.precio = new Chart(contextoPrecio, {
+      type: 'line',
+      data: {
+        labels: etiquetas,
+        datasets: [{
+          label: 'Precio ($)',
+          data: precios,
+          borderColor: colorBordeLinea,
+          backgroundColor: colorRellenoLinea,
+          borderWidth: 2,
+          tension: 0.35,
+          fill: true,
+          pointRadius: 4,
+          pointHoverRadius: 6
+        }]
+      },
+      options: {
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: true,
+            grid: { color: colorGrid },
+            ticks: { color: colorTick }
+          },
+          x: {
+            grid: { display: false },
+            ticks: { color: colorTick }
+          }
+        },
+        plugins: {
+          legend: { labels: { color: colorTick } }
+        }
+      }
+    });
+  }
   
+  /**
+   * Maneja el proceso de inicio de sesión
+   */
+  async function procesarLogin(evento) {
+    evento.preventDefault();
+    elementosDOM.mensajeError.textContent = '';
+    elementosDOM.botonLogin.disabled = true;
+    elementosDOM.botonLogin.textContent = 'Ingresando...';
+    
+    try {
+      const usuario = elementosDOM.inputUsuario.value.trim();
+      const password = elementosDOM.inputPassword.value;
+      
+      const respuesta = await fetch('/servicios/dashboard/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ usuario, password })
+      });
+      
+      if (!respuesta.ok) {
+        const datosError = await respuesta.json().catch(() => ({ mensaje: 'Credenciales inválidas' }));
+        throw new Error(datosError.mensaje || 'Error al iniciar sesión');
+      }
+      
+      const datosRespuesta = await respuesta.json();
+      localStorage.setItem('admin_token', datosRespuesta.token || '1');
+      actualizarInterfazAdmin(true);
+      ocultarLogin();
+      await cargarDatosSalones();
+    } catch (error) {
+      elementosDOM.mensajeError.textContent = error.message || 'Error al iniciar sesión';
+    } finally {
+      elementosDOM.botonLogin.disabled = false;
+      elementosDOM.botonLogin.textContent = 'Ingresar';
+    }
+  }
+  
+  /**
+   * Cierra la sesión del administrador
+   */
+  function cerrarSesion() {
+    localStorage.removeItem('admin_token');
+    actualizarInterfazAdmin(false);
+    mostrarLogin();
+  }
+  
+  /**
+   * Instala los procedimientos almacenados en la base de datos
+   */
+  elementosDOM.botonInstalarSPs.addEventListener('click', async () => {
+    const token = localStorage.getItem('admin_token');
+    if (!token) {
+      mostrarLogin();
+      return;
+    }
+    
+    if (!confirm('¿Instalar/Actualizar los procedimientos almacenados en la base de datos?')) {
+      return;
+    }
+    
+    try {
+      elementosDOM.botonInstalarSPs.disabled = true;
+      elementosDOM.botonInstalarSPs.textContent = 'Instalando...';
+      
+      const respuesta = await fetch('/servicios/dashboard/instalar-sps', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer ' + token }
+      });
+      
+      const datos = await respuesta.json();
+      if (!respuesta.ok) {
+        throw new Error(datos.mensaje || 'Error desconocido');
+      }
+      
+      alert(datos.mensaje || 'SPs instalados/actualizados correctamente');
+    } catch (error) {
+      alert(error.message || error);
+    } finally {
+      elementosDOM.botonInstalarSPs.disabled = false;
+      elementosDOM.botonInstalarSPs.textContent = 'Instalar/Actualizar SPs en la BD';
+    }
+  });
+  
+  /**
+   * Muestra los filtros del reporte
+   */
+  elementosDOM.botonReporte.addEventListener('click', () => {
+    const token = localStorage.getItem('admin_token');
+    if (!token) {
+      mostrarLogin();
+      return;
+    }
+    elementosDOM.filtrosReporte.style.display = 'flex';
+    elementosDOM.panelReporte.style.display = 'block';
+  });
+  
+  /**
+   * Genera el reporte de reservas con los filtros seleccionados
+   */
+  elementosDOM.botonEjecutarReporte.addEventListener('click', async () => {
+    const token = localStorage.getItem('admin_token');
+    if (!token) {
+      mostrarLogin();
+      return;
+    }
+    
+    const parametros = new URLSearchParams();
+    const fechaInicio = seleccionarElemento('#f_inicio').value;
+    const fechaFin = seleccionarElemento('#f_fin').value;
+    const salonId = seleccionarElemento('#f_salon').value;
+    const usuarioId = seleccionarElemento('#f_usuario').value;
+    
+    if (fechaInicio) parametros.append('fecha_inicio', fechaInicio);
+    if (fechaFin) parametros.append('fecha_fin', fechaFin);
+    if (salonId) parametros.append('salon_id', salonId);
+    if (usuarioId) parametros.append('usuario_id', usuarioId);
+    
+    try {
+      elementosDOM.botonEjecutarReporte.disabled = true;
+      elementosDOM.botonEjecutarReporte.textContent = 'Generando...';
+      
+      const respuesta = await fetch('/servicios/dashboard/reporte-reservas?' + parametros.toString(), {
+        headers: { Authorization: 'Bearer ' + token }
+      });
+      
+      const datos = await respuesta.json();
+      if (!respuesta.ok) {
+        throw new Error(datos.mensaje || 'Error generando informe');
+      }
+      
+      const filas = datos.datos || [];
+      if (!filas.length) {
+        elementosDOM.contenidoReporte.textContent = 'No se encontraron registros.';
+        return;
+      }
+      
+      // Generar tabla HTML con los resultados
+      const claves = Object.keys(filas[0]);
+      let html = '<div class="table-wrap"><table class="report-table"><thead><tr>';
+      for (const clave of claves) {
+        html += `<th>${clave}</th>`;
+      }
+      html += '</tr></thead><tbody>';
+      
+      for (const fila of filas) {
+        html += '<tr>';
+        for (const clave of claves) {
+          let valor = fila[clave];
+          const claveMinuscula = clave.toLowerCase();
+          
+          if (valor == null) {
+            valor = '';
+          } else if (claveMinuscula.includes('importe') || claveMinuscula.includes('total') || claveMinuscula.includes('precio')) {
+            valor = formatearMoneda(valor);
+          } else if (claveMinuscula.includes('fecha')) {
+            try {
+              valor = new Date(valor).toISOString().slice(0, 10);
+            } catch (error) {
+              // Mantener el valor original si hay error al formatear
+            }
+          }
+          html += `<td>${valor}</td>`;
+        }
+        html += '</tr>';
+      }
+      html += '</tbody></table></div>';
+      elementosDOM.contenidoReporte.innerHTML = html;
+    } catch (error) {
+      alert(error.message || error);
+    } finally {
+      elementosDOM.botonEjecutarReporte.disabled = false;
+      elementosDOM.botonEjecutarReporte.textContent = 'Ejecutar';
+    }
+  });
+  
+  /**
+   * Alterna entre tema claro y oscuro
+   */
+  elementosDOM.toggleTema.addEventListener('click', () => {
+    document.body.classList.toggle('dark');
+    crearGraficos();
+    elementosDOM.toggleTema.textContent = document.body.classList.contains('dark')
+      ? '☀️ Modo claro'
+      : '🌙 Modo oscuro';
+  });
+  
+  // Event listeners
+  elementosDOM.formularioLogin.addEventListener('submit', procesarLogin);
+  elementosDOM.botonCerrarSesion.addEventListener('click', cerrarSesion);
+  
+  /**
+   * Inicialización cuando el DOM está listo
+   */
+  window.addEventListener('DOMContentLoaded', async () => {
+    // Detectar preferencia de tema del sistema
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      document.body.classList.add('dark');
+      elementosDOM.toggleTema.textContent = '☀️ Modo claro';
+    }
+    
+    // Verificar si hay token guardado
+    const token = localStorage.getItem('admin_token');
+    if (token) {
+      actualizarInterfazAdmin(true);
+      await cargarDatosSalones();
+    } else {
+      actualizarInterfazAdmin(false);
+      mostrarLogin();
+    }
+  });
+})();

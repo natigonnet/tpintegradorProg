@@ -4,6 +4,7 @@ import swaggerUI from 'swagger-ui-express';
 import specs from './docs/swagger.js';
 import { router as v1SalonesRutas } from './v1/rutas/salonesRutas.js';
 import { router as v1AdminRutas } from './v1/rutas/adminRutas.js';
+import { router as dashboardRutas } from './v1/rutas/dashboardRutas.js';
 import { manejadorErrores, rutaNoEncontrada } from './middleware/manejadorErrores.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -31,6 +32,7 @@ app.get('/', (req, res) => {
 
 app.use('/api/v1/salones', v1SalonesRutas);
 app.use('/api/v1/admin', v1AdminRutas);
+app.use('/servicios/dashboard', dashboardRutas);
 
 app.use(rutaNoEncontrada); // Middleware para rutas no encontradas
 
