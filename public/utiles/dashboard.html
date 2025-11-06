@@ -63,11 +63,12 @@
     </div>
 
     <div class="filters" id="reporteFiltros" style="display:none">
-      <label>Fecha inicio:<input type="date" id="f_inicio"></label>
-      <label>Fecha fin:<input type="date" id="f_fin"></label>
-      <label>Salon ID:<input type="number" id="f_salon" class="small" min="1"></label>
-      <label>Usuario ID:<input type="number" id="f_usuario" class="small" min="1"></label>
+      <label>Fecha inicio (opcional):<input type="date" id="f_inicio" placeholder="YYYY-MM-DD"></label>
+      <label>Fecha fin (opcional):<input type="date" id="f_fin" placeholder="YYYY-MM-DD"></label>
+      <label>Salon ID (opcional):<input type="number" id="f_salon" class="small" min="1" placeholder="Ej: 1"></label>
+      <label>Usuario ID (opcional):<input type="number" id="f_usuario" class="small" min="1" placeholder="Ej: 1"></label>
       <button class="btn" id="runReporteBtn">Ejecutar</button>
+      <p style="font-size: 0.85em; color: #888; margin-top: 8px;">Nota: Puedes dejar todos los campos vacíos para ver todas las reservas, o filtrar por los campos que desees.</p>
     </div>
 
     <div class="result-panel" id="reportePanel" style="display:none">

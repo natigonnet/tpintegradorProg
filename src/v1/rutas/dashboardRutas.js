@@ -40,16 +40,38 @@ router.get(
   esAdmin,
   [
     query('fecha_inicio')
-      .optional()
-      .isISO8601()
-      .withMessage('La fecha_inicio debe tener formato ISO8601 válido'),
+      .optional({ checkFalsy: true })
+      .custom((valor) => {
+        if (!valor || valor === '') return true; // Permitir vacío
+        // Validar formato ISO8601 (YYYY-MM-DD)
+        const regex = /^\d{4}-\d{2}-\d{2}$/;
+        if (!regex.test(valor)) {
+          throw new Error('La fecha_inicio debe tener formato YYYY-MM-DD');
+        }
+        const fecha = new Date(valor);
+        if (isNaN(fecha.getTime())) {
+          throw new Error('La fecha_inicio no es una fecha válida');
+        }
+        return true;
+      }),
     query('fecha_fin')
-      .optional()
-      .isISO8601()
-      .withMessage('La fecha_fin debe tener formato ISO8601 válido')
+      .optional({ checkFalsy: true })
+      .custom((valor) => {
+        if (!valor || valor === '') return true; // Permitir vacío
+        // Validar formato ISO8601 (YYYY-MM-DD)
+        const regex = /^\d{4}-\d{2}-\d{2}$/;
+        if (!regex.test(valor)) {
+          throw new Error('La fecha_fin debe tener formato YYYY-MM-DD');
+        }
+        const fecha = new Date(valor);
+        if (isNaN(fecha.getTime())) {
+          throw new Error('La fecha_fin no es una fecha válida');
+        }
+        return true;
+      })
       .custom((fechaFin, { req }) => {
         const fechaInicio = req.query.fecha_inicio;
-        if (fechaInicio && fechaFin) {
+        if (fechaInicio && fechaFin && fechaInicio !== '' && fechaFin !== '') {
           if (new Date(fechaInicio) > new Date(fechaFin)) {
             throw new Error('La fecha de inicio no puede ser posterior a la fecha de fin');
           }
