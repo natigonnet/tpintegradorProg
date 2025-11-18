@@ -1,0 +1,5 @@
+PUERTO=3000
+DB_HOST=localhost
+DB_USER=reservas
+DB_NAME=reservas
+DB_PASSWORD=reservas123456
