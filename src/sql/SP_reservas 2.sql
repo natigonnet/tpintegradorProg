@@ -89,7 +89,9 @@ BEGIN
         
         -- Datos del usuario
         u.usuario_id,
-        u.nombre AS usuario_nombre_completo,
+        CONCAT(u.nombre, ' ', u.apellido) AS usuario_nombre_completo,
+        u.nombre_usuario,
+        u.celular,
         
         -- Servicios contratados (como texto)
         (SELECT GROUP_CONCAT(
@@ -149,7 +151,10 @@ BEGIN
         -- Datos del usuario
         u.usuario_id,
         u.nombre,
-        u.nombre AS usuario_nombre_completo,
+        u.apellido,
+        CONCAT(u.nombre, ' ', u.apellido) AS usuario_nombre_completo,
+        u.nombre_usuario,
+        u.celular,
         u.tipo_usuario,
         
         -- Servicios contratados

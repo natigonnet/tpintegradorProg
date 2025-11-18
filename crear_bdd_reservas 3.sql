@@ -1,6 +1,9 @@
 CREATE DATABASE IF NOT EXISTS reservas;
 USE reservas;
 
+--
+-- Estructura de tabla para la tabla `reservas`
+--
 
 CREATE TABLE `reservas` (
   `reserva_id` int(11) NOT NULL,
@@ -17,14 +20,20 @@ CREATE TABLE `reservas` (
   `modificado` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- `reservas` --
+--
+-- Volcado de datos para la tabla `reservas`
+--
 
 INSERT INTO `reservas` (`reserva_id`, `fecha_reserva`, `salon_id`, `usuario_id`, `turno_id`, `foto_cumpleaniero`, `tematica`, `importe_salon`, `importe_total`, `activo`, `creado`, `modificado`) VALUES
 (1, '2025-10-08', 1, 1, 1, NULL, 'Plim plim', NULL, 200000.00, 1, '2025-08-19 22:02:33', '2025-08-19 22:02:33'),
 (2, '2025-10-08', 2, 1, 1, NULL, 'Messi', NULL, 100000.00, 1, '2025-08-19 22:03:45', '2025-08-19 22:03:45'),
 (3, '2025-10-08', 2, 2, 1, NULL, 'Palermo', NULL, 500000.00, 1, '2025-08-19 22:03:45', '2025-08-19 22:03:45');
 
--- tabla `reservas_servicios`--
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `reservas_servicios`
+--
 
 CREATE TABLE `reservas_servicios` (
   `reserva_servicio_id` int(11) NOT NULL,
@@ -35,7 +44,9 @@ CREATE TABLE `reservas_servicios` (
   `modificado` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- tabla `reservas_servicios` --
+--
+-- Volcado de datos para la tabla `reservas_servicios`
+--
 
 INSERT INTO `reservas_servicios` (`reserva_servicio_id`, `reserva_id`, `servicio_id`, `importe`, `creado`, `modificado`) VALUES
 (1, 1, 1, 50000.00, '2025-08-19 22:07:31', '2025-08-19 22:07:31'),
